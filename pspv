@@ -1,0 +1,37 @@
+#!/usr/bin/bash 
+# Original code by Ahayri, thumbnail code tweaked by mavemvl
+! command -v >/dev/null && echo "no ffmpeg!" && exit 1
+read -rp "Input file: " INPUT
+read -rp "Output file: " OUTPUT
+cat <<EOF 
+Choose aspect ratio:
+1) 4:3 (320:240)
+2) 16:9 (approx. , using 480:272)
+3) 4:3 (640:480)
+4) 16:9 (720:480)
+EOF
+read -rp "> " ASP
+case $ASP in
+1)
+SCALE="320:240"
+;;
+2)
+SCALE="480:272"
+;;
+3)
+SCALE="640:480"
+;;
+4)
+SCALE="720:480"
+;;
+*)
+echo "invalid input" && exit 1
+;;
+esac
+read -rp "Include thumbnail? (y/n)" inc
+if [[ "$inc" == "y" ]]; then
+ffmpeg -i "$INPUT" -c:v libx264 -profile:v main -level 3.0 -pix_fmt yuv420p -x264-params "ref=3:bframes=1:b-pyramid=none" -vf "scale=$SCALE" -movflags +faststart -f psp "$OUTPUT" -vf "thumbnail,scale=160:120" -frames:v 1 -f image2 -c:v mjpeg "${OUTPUT%.mp4}.thm"
+else
+ffmpeg -i "$INPUT" -c:v libx264 -profile:v main -level 3.0 -pix_fmt yuv420p -x264-params "ref=3:bframes=1:b-pyramid=none" -vf "scale=$SCALE" -movflags +faststart -f psp "$OUTPUT"
+fi
+
