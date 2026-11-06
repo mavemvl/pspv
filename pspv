@@ -3,6 +3,23 @@
 ! command -v >/dev/null && echo "no ffmpeg!" && exit 1
 read -rp "Input file: " INPUT
 read -rp "Output file: " OUTPUT
+cat<<EOF
+Choose format:
+1) AVI (MJPEG, uLaw/LPCM, choosing LPCM)
+2) MP4 AVC (H.264 Main)
+EOF
+read -rp "> " FORM
+case $FORM in
+1)
+FORM=avi
+;;
+2)
+FORM=avc
+;;
+*)
+echo "invalid input" && exit 1
+;;
+esac
 cat <<EOF 
 Choose aspect ratio:
 1) 4:3 (320:240)
@@ -29,9 +46,23 @@ echo "invalid input" && exit 1
 ;;
 esac
 read -rp "Include thumbnail? (y/n)" inc
+
+
+if [[ "$FORM" == "avc" ]]; then
+
 if [[ "$inc" == "y" ]]; then
 ffmpeg -i "$INPUT" -c:v libx264 -profile:v main -level 3.0 -pix_fmt yuv420p -x264-params "ref=3:bframes=1:b-pyramid=none" -vf "scale=$SCALE" -movflags +faststart -f psp "$OUTPUT" -vf "thumbnail,scale=160:120" -frames:v 1 -f image2 -c:v mjpeg "${OUTPUT%.mp4}.thm"
 else
 ffmpeg -i "$INPUT" -c:v libx264 -profile:v main -level 3.0 -pix_fmt yuv420p -x264-params "ref=3:bframes=1:b-pyramid=none" -vf "scale=$SCALE" -movflags +faststart -f psp "$OUTPUT"
 fi
 
+elif [[ "$FORM" == "avi" ]]; then
+
+
+if [[ "$inc" == "y" ]]; then
+ffmpeg -i "$INPUT" -c:v mjpeg -c:a pcm_s16le -vf "scale=$SCALE" "$OUTPUT" -vf "thumbnail,scale=160:120" -frames:v 1 -c:v mjpeg -f image2 "${OUTPUT%.avi}.thm"
+else
+ffmpeg -i "$INPUT" -c:v mjpeg -c:a pcm_s16le -vf "scale=$SCALE" "$OUTPUT" 
+fi
+
+fi
